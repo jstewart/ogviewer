@@ -2,6 +2,7 @@ defmodule Ogviewer.OgProcessor.SiteTest do
   use ExUnit.Case, async: true
 
   alias Ogviewer.OgProcessor.Site
+  alias Ogviewer.OgProcessor.Url
 
   describe "fetching a URL" do
     setup do
@@ -10,7 +11,7 @@ defmodule Ogviewer.OgProcessor.SiteTest do
     end
 
     test "exception with an invalid url" do
-      assert_raise(ArgumentError, fn -> Site.fetch("12345") end)
+      assert_raise(ArgumentError, fn -> Site.fetch(%Url{url: "12345"}) end)
     end
 
     test "errors with a non-successful HTTP status", %{bypass: bypass} do
@@ -18,14 +19,14 @@ defmodule Ogviewer.OgProcessor.SiteTest do
         Plug.Conn.resp(conn, 500, "server error")
       end)
 
-      assert {:error, "500: server error"} = Site.fetch(endpoint_url(bypass.port))
+      assert {:error, "500: server error"} = Site.fetch(%Url{url: endpoint_url(bypass.port)})
     end
 
     test "network errors", %{bypass: bypass} do
       Bypass.down(bypass)
 
       assert {:error, %Mint.TransportError{reason: :econnrefused}} =
-               Site.fetch(endpoint_url(bypass.port))
+               Site.fetch(%Url{url: endpoint_url(bypass.port)})
 
       Bypass.up(bypass)
     end
@@ -37,7 +38,7 @@ defmodule Ogviewer.OgProcessor.SiteTest do
         Plug.Conn.resp(conn, 200, success)
       end)
 
-      assert {:ok, ^success} = Site.fetch(endpoint_url(bypass.port))
+      assert {:ok, ^success} = Site.fetch(%Url{url: endpoint_url(bypass.port)})
     end
   end
 

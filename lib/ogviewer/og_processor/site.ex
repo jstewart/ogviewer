@@ -3,10 +3,12 @@ defmodule Ogviewer.OgProcessor.Site do
   Site loader and processor for the OgViewer
   """
 
+  alias Ogviewer.OgProcessor.Url
+
   @doc """
   Fetches a HTTP resource, handling common errors
   """
-  def fetch(url) do
+  def fetch(%Url{url: url}) do
     # Note that we _may_ want to retry someday, if and only if
     # it doesn't interfere with the user's experience
     with {:ok, response} <- Req.get(url, retry: false),
