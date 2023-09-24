@@ -2,10 +2,9 @@ defmodule Ogviewer.OgProcessorTest do
   use Ogviewer.DataCase
 
   alias Ogviewer.OgProcessor
+  alias Ogviewer.OgProcessor.Url
 
   describe "urls" do
-    alias Ogviewer.OgProcessor.Url
-
     import Ogviewer.OgProcessorFixtures
 
     @invalid_attrs %{error: nil, preview_image: nil, status: nil, url: nil}
@@ -34,7 +33,12 @@ defmodule Ogviewer.OgProcessorTest do
 
     test "update_url/2 with valid data updates the url" do
       url = url_fixture()
-      update_attrs = %{error: "some updated error", preview_image: "some updated preview_image", status: :error}
+
+      update_attrs = %{
+        error: "some updated error",
+        preview_image: "some updated preview_image",
+        status: :error
+      }
 
       assert {:ok, %Url{} = url} = OgProcessor.update_url(url, update_attrs)
       assert url.error == "some updated error"
@@ -59,4 +63,71 @@ defmodule Ogviewer.OgProcessorTest do
       assert %Ecto.Changeset{} = OgProcessor.change_url(url)
     end
   end
+
+  @html_without_og """
+  <html>
+  <head>
+  <title>Test</title>
+  </head>
+  <body>
+    <div class="content">
+      <a href="http://google.com" class="js-google js-cool" data-action="lolcats">Google</a>
+      <a href="http://elixir-lang.org" class="js-elixir js-cool">Elixir lang</a>
+      <a href="http://java.com" class="js-java">Java</a>
+    </div>
+  </body>
+  </html>
+  """
+
+  @html_with_og """
+  <html>
+  <head>
+  <meta property="og:title" content="Luna Care - Physical therapy, delivered to you">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.getluna.com/">
+  <meta property="og:image" content="https://www.getluna.com/assets/images/we_come_to_you.svg">
+  <title>Test</title>
+  </head>
+  <body>
+    <div class="content">
+      <a href="http://google.com" class="js-google js-cool" data-action="lolcats">Google</a>
+      <a href="http://elixir-lang.org" class="js-elixir js-cool">Elixir lang</a>
+      <a href="http://java.com" class="js-java">Java</a>
+    </div>
+  </body>
+  </html>
+  """
+  describe "process_url" do
+    setup do
+      bypass = Bypass.open()
+      {:ok, bypass: bypass}
+    end
+
+    test "changeset error for a blank url" do
+      assert {:error, %Ecto.Changeset{valid?: false}} = OgProcessor.process_url("")
+    end
+
+    test "raises for an invalid url" do
+      assert_raise(ArgumentError, fn -> OgProcessor.process_url("foo") end)
+    end
+
+    test "errors when preview image is not found", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/", fn conn ->
+        Plug.Conn.resp(conn, 200, @html_without_og)
+      end)
+
+      assert {:error, :not_found} = OgProcessor.process_url(endpoint_url(bypass.port))
+    end
+
+    test "returns a %Url{} with a preview image", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/", fn conn ->
+        Plug.Conn.resp(conn, 200, @html_with_og)
+      end)
+
+      assert {:ok, %Url{preview_image: "https://www.getluna.com/assets/images/we_come_to_you.svg"}} =
+               OgProcessor.process_url(endpoint_url(bypass.port))
+    end
+  end
+
+  defp endpoint_url(port), do: "http://localhost:#{port}/"
 end
