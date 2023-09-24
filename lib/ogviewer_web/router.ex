@@ -17,7 +17,7 @@ defmodule OgviewerWeb.Router do
   scope "/", OgviewerWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", PageLive, :home
   end
 
   # Other scopes may use custom stacks.
