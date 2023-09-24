@@ -103,12 +103,9 @@ defmodule Ogviewer.OgProcessorTest do
       {:ok, bypass: bypass}
     end
 
-    test "changeset error for a blank url" do
-      assert {:error, %Ecto.Changeset{valid?: false}} = OgProcessor.process_url("")
-    end
-
     test "raises for an invalid url" do
-      assert_raise(ArgumentError, fn -> OgProcessor.process_url("foo") end)
+      {:ok, url} = OgProcessor.create_url(%{url: "foo"})
+      assert_raise(ArgumentError, fn -> OgProcessor.process_url(url) end)
     end
 
     test "errors when preview image is not found", %{bypass: bypass} do
@@ -116,7 +113,8 @@ defmodule Ogviewer.OgProcessorTest do
         Plug.Conn.resp(conn, 200, @html_without_og)
       end)
 
-      assert {:error, :not_found} = OgProcessor.process_url(endpoint_url(bypass.port))
+      {:ok, url} = OgProcessor.create_url(%{url: endpoint_url(bypass.port)})
+      assert {:error, :not_found} = OgProcessor.process_url(url)
     end
 
     test "returns a %Url{} with a preview image", %{bypass: bypass} do
@@ -124,8 +122,10 @@ defmodule Ogviewer.OgProcessorTest do
         Plug.Conn.resp(conn, 200, @html_with_og)
       end)
 
-      assert {:ok, %Url{preview_image: "https://www.getluna.com/assets/images/we_come_to_you.svg"}} =
-               OgProcessor.process_url(endpoint_url(bypass.port))
+      {:ok, url} = OgProcessor.create_url(%{url: endpoint_url(bypass.port)})
+      assert {:ok,
+              %Url{preview_image: "https://www.getluna.com/assets/images/we_come_to_you.svg"}} =
+               OgProcessor.process_url(url)
     end
   end
 

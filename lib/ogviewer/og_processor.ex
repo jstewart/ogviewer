@@ -119,7 +119,7 @@ defmodule Ogviewer.OgProcessor do
   end
 
   @doc """
-  Fetches an opengraph preview image from a URL, recording
+  Fetches an opengraph preview image from a %URL{}, recording
   the status of the operation in the database
 
   Returns {:ok, %Url{}} when successful,
@@ -128,19 +128,19 @@ defmodule Ogviewer.OgProcessor do
   ## Examples
 
       iex> process_url(url)
-      {:ok, "https://example.com/image.png"}
+      {:ok, %Url{preview_image: "https://example.com/image.png"}}
   """
-  def process_url(url_string) do
-    with {:ok, url} <- create_url(%{url: url_string}),
-         {:ok, html_body} <- Site.fetch(url),
-         {:ok, preview_image} <- Site.parse(html_body) do
-      result = update_url(url, %{status: :processed, preview_image: preview_image})
-      Logger.info("processed url: #{url_string}")
+  def process_url(%Url{} = url) do
+    with {:ok, html_body} <- Site.fetch(url),
+         {:ok, preview_image} <- Site.parse(html_body),
+         {:ok, url} <- update_url(url, %{status: :processed, preview_image: preview_image}) do
+      Logger.info("processed url: #{url.url}")
 
-      result
+      {:ok, url}
     else
       {:error, error} ->
-        Logger.error("error processing url #{url_string}")
+        Logger.error("error processing url #{url.url}")
+         update_url(url, %{status: :error, errors: inspect(error)})
         {:error, error}
     end
   end
