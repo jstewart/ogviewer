@@ -22,4 +22,26 @@ defmodule Ogviewer.OgProcessor.Site do
         {:error, error}
     end
   end
+
+  @doc """
+  Parses a site's preview image.
+  See: https://ogp.me/
+
+  Returns a tuple of {:ok, image} - when successful,
+  {:error, :not_found} - When the preview image is not specified, or
+  {:error, some_floki_parsing_error} when Floki couldn't parse the HTML
+  """
+  def parse(html) do
+    with {:ok, document} <- Floki.parse_document(html),
+         [{"meta", [{"property", "og:image"}, {"content", preview_image}], []}] <-
+           Floki.find(document, "meta[property='og:image']") do
+      {:ok, preview_image}
+    else
+      {:error, floki_error} ->
+        {:error, floki_error}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
 end

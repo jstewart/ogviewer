@@ -3,12 +3,12 @@ defmodule Ogviewer.OgProcessor.SiteTest do
 
   alias Ogviewer.OgProcessor.Site
 
-  setup do
-    bypass = Bypass.open()
-    {:ok, bypass: bypass}
-  end
-
   describe "fetching a URL" do
+    setup do
+      bypass = Bypass.open()
+      {:ok, bypass: bypass}
+    end
+
     test "exception with an invalid url" do
       assert_raise(ArgumentError, fn -> Site.fetch("12345") end)
     end
@@ -38,6 +38,51 @@ defmodule Ogviewer.OgProcessor.SiteTest do
       end)
 
       assert {:ok, ^success} = Site.fetch(endpoint_url(bypass.port))
+    end
+  end
+
+  @html_without_og """
+  <html>
+  <head>
+  <title>Test</title>
+  </head>
+  <body>
+    <div class="content">
+      <a href="http://google.com" class="js-google js-cool" data-action="lolcats">Google</a>
+      <a href="http://elixir-lang.org" class="js-elixir js-cool">Elixir lang</a>
+      <a href="http://java.com" class="js-java">Java</a>
+    </div>
+  </body>
+  </html>
+  """
+
+  @html_with_og """
+  <html>
+  <head>
+  <meta property="og:title" content="Luna Care - Physical therapy, delivered to you">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.getluna.com/">
+  <meta property="og:image" content="https://www.getluna.com/assets/images/we_come_to_you.svg">
+  <title>Test</title>
+  </head>
+  <body>
+    <div class="content">
+      <a href="http://google.com" class="js-google js-cool" data-action="lolcats">Google</a>
+      <a href="http://elixir-lang.org" class="js-elixir js-cool">Elixir lang</a>
+      <a href="http://java.com" class="js-java">Java</a>
+    </div>
+  </body>
+  </html>
+  """
+
+  describe "parsing the preview image" do
+    test "errors when the preview image is missing" do
+      assert {:error, :not_found} = Site.parse(@html_without_og)
+    end
+
+    test "returns the preview image" do
+      assert {:ok, "https://www.getluna.com/assets/images/we_come_to_you.svg"} =
+               Site.parse(@html_with_og)
     end
   end
 
