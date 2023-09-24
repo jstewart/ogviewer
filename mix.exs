@@ -50,7 +50,8 @@ defmodule Ogviewer.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:req, "~> 0.4.0"}
+      {:req, "~> 0.4.0"},
+      {:bypass, "~> 2.1", only: :test}
     ]
   end
 
