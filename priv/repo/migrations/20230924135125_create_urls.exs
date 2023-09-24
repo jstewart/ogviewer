@@ -4,7 +4,7 @@ defmodule Ogviewer.Repo.Migrations.CreateUrls do
   def change do
     create table(:urls) do
       add :url, :text
-      add :status, :string
+      add :status, :string, default: "processing"
       add :preview_image, :text
       add :error, :text
 
