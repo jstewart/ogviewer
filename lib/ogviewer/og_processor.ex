@@ -140,8 +140,12 @@ defmodule Ogviewer.OgProcessor do
     else
       {:error, error} ->
         Logger.error("error processing url #{url.url}")
-         update_url(url, %{status: :error, errors: inspect(error)})
+        update_url(url, %{status: :error, errors: inspect(error)})
         {:error, error}
     end
+  rescue
+    e ->
+      Logger.error("exception: #{e.message}")
+      {:error, e.message}
   end
 end

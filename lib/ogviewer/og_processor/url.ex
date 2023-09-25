@@ -17,6 +17,4 @@ defmodule Ogviewer.OgProcessor.Url do
     |> cast(attrs, [:url, :status, :preview_image, :error])
     |> validate_required([:url])
   end
-
-  # TODO update changeset
 end

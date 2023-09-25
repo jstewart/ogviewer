@@ -103,9 +103,9 @@ defmodule Ogviewer.OgProcessorTest do
       {:ok, bypass: bypass}
     end
 
-    test "raises for an invalid url" do
+    test "returns an error for an invalid url" do
       {:ok, url} = OgProcessor.create_url(%{url: "foo"})
-      assert_raise(ArgumentError, fn -> OgProcessor.process_url(url) end)
+      assert {:error, "scheme is required for url: foo"} = OgProcessor.process_url(url)
     end
 
     test "errors when preview image is not found", %{bypass: bypass} do
