@@ -5,13 +5,15 @@ defmodule Ogviewer.OgProcessor.Site do
 
   alias Ogviewer.OgProcessor.Url
 
+  @fetch_timeout_ms 5_000
+
   @doc """
   Fetches a HTTP resource, handling common errors
   """
   def fetch(%Url{url: url}) do
     # Note that we _may_ want to retry someday, if and only if
     # it doesn't interfere with the user's experience
-    with {:ok, response} <- Req.get(url, retry: false),
+    with {:ok, response} <- Req.get(url, receive_timeout: @fetch_timeout_ms, retry: false),
          %Req.Response{status: 200, body: body} <- response do
       {:ok, body}
     else
